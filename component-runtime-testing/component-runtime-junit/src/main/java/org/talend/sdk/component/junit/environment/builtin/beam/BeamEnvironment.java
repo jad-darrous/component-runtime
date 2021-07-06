@@ -36,6 +36,7 @@ public abstract class BeamEnvironment extends ClassLoaderEnvironment {
 
     @Override
     protected AutoCloseable doStart(final Class<?> clazz, final Annotation[] annotations) {
+        log.info("Do start for {} in class {}", clazz.getName(), this.getClass().getName());
         beamVersion = System.getProperty("talend.junit.beam.version", Versions.BEAM_VERSION);
         kitVersion = System.getProperty("talend.junit.kit.version", Versions.KIT_VERSION);
         resetBeamCache(false);
