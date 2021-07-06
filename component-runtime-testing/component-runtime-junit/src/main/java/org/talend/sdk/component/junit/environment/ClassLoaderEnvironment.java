@@ -46,6 +46,7 @@ public abstract class ClassLoaderEnvironment extends BaseEnvironmentProvider {
                 .of(rootDependencies())
                 .peek(dep -> log.info("Resolving " + dep + "..."))
                 .flatMap(dep -> Stream.of(Dependencies.resolve(dep)))
+                .peek((URL url) -> log.info("Found dependencies {}", url.getPath()))
                 .toArray(URL[]::new), Thread.currentThread().getContextClassLoader());
         final ClassLoader original = thread.getContextClassLoader();
         thread.setContextClassLoader(classLoader);

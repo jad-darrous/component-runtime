@@ -131,7 +131,8 @@ public class Dependencies {
                     .workOffline(Boolean.getBoolean("talend.component.junit.maven.offline"));
             REPOSITORIES.forEach(resolver::withRemoteRepo);
             resolver.addDependency(dep);
-            return Stream.of(resolver.resolve().using(STRATEGY).asFile()).distinct().map(f -> {
+            return Stream.of(resolver.resolve().using(STRATEGY).asFile()).distinct()
+                    .map(f -> {
                 try {
                     return f.toURI().toURL();
                 } catch (final MalformedURLException e) {
