@@ -129,9 +129,12 @@ public class Dependencies {
         return CACHE.computeIfAbsent(dep, d -> {
             final ConfigurableMavenResolverSystem resolver = Maven
                     .configureResolver()
-                    .withClassPathResolution(true).useLegacyLocalRepo(true)
+                    .withClassPathResolution(true)
+                    .useLegacyLocalRepo(true)
                     .workOffline(Boolean.getBoolean("talend.component.junit.maven.offline"));
-            REPOSITORIES.forEach((MavenRemoteRepository repo) -> Dependencies.log.info("Repo for resolver ", repo.getUrl()));
+            REPOSITORIES
+                    .forEach(
+                            (MavenRemoteRepository repo) -> Dependencies.log.info("Repo for resolver ", repo.getUrl()));
             REPOSITORIES.forEach(resolver::withRemoteRepo);
             resolver.addDependency(dep);
             final MavenStrategyStage strategyStage = resolver.resolve();
