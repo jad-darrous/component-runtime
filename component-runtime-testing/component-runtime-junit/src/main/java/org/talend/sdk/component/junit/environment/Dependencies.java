@@ -30,6 +30,8 @@ import java.util.stream.Stream;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jboss.shrinkwrap.resolver.api.maven.ConfigurableMavenResolverSystem;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.MavenFormatStage;
+import org.jboss.shrinkwrap.resolver.api.maven.MavenStrategyStage;
 import org.jboss.shrinkwrap.resolver.api.maven.MavenWorkingSession;
 import org.jboss.shrinkwrap.resolver.api.maven.PomEquippedResolveStage;
 import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
@@ -127,12 +129,14 @@ public class Dependencies {
         return CACHE.computeIfAbsent(dep, d -> {
             final ConfigurableMavenResolverSystem resolver = Maven
                     .configureResolver()
-                    .withClassPathResolution(true)
+                    .withClassPathResolution(true).useLegacyLocalRepo(true)
                     .workOffline(Boolean.getBoolean("talend.component.junit.maven.offline"));
+            REPOSITORIES.forEach((MavenRemoteRepository repo) -> Dependencies.log.info("Repo for resolver ", repo.getUrl()));
             REPOSITORIES.forEach(resolver::withRemoteRepo);
             resolver.addDependency(dep);
-            return Stream.of(resolver.resolve().using(STRATEGY).asFile()).distinct()
-                    .map(f -> {
+            final MavenStrategyStage strategyStage = resolver.resolve();
+            final MavenFormatStage formatStage = strategyStage.using(STRATEGY);
+            return Stream.of(formatStage.asFile()).distinct().map(f -> {
                 try {
                     return f.toURI().toURL();
                 } catch (final MalformedURLException e) {
