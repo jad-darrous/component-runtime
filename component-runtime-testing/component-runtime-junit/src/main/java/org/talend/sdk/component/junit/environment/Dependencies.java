@@ -123,7 +123,7 @@ public class Dependencies {
     }
 
     private static final MavenResolutionStrategy STRATEGY =
-            new AcceptScopesStrategy(ScopeType.COMPILE, ScopeType.RUNTIME);
+            new AcceptScopesStrategy(ScopeType.COMPILE, ScopeType.RUNTIME, ScopeType.IMPORT);
 
     public static URL[] resolve(final MavenDependency dep) {
         return CACHE.computeIfAbsent(dep, d -> {
@@ -133,8 +133,8 @@ public class Dependencies {
                     .useLegacyLocalRepo(true)
                     .workOffline(Boolean.getBoolean("talend.component.junit.maven.offline"));
             REPOSITORIES
-                    .forEach(
-                            (MavenRemoteRepository repo) -> Dependencies.log.info("Repo for resolver ", repo.getUrl()));
+                    .forEach((MavenRemoteRepository repo) -> Dependencies.log
+                            .info("Repo for resolver {}", repo.getUrl()));
             REPOSITORIES.forEach(resolver::withRemoteRepo);
             resolver.addDependency(dep);
             final MavenStrategyStage strategyStage = resolver.resolve();
