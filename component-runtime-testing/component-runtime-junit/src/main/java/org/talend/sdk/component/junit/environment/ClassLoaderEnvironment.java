@@ -18,9 +18,12 @@ package org.talend.sdk.component.junit.environment;
 import static java.util.Optional.ofNullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.stream.Stream;
 
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
@@ -55,6 +58,11 @@ public abstract class ClassLoaderEnvironment extends BaseEnvironmentProvider {
             log.info("BOM FOLDER content size : {}", files.length);
             for (int i = 0; i < files.length; i++) {
                 log.info("BOM FOLDER FILE : {}", files[i].getName());
+                try {
+                    final byte[] allBytes = Files.readAllBytes(files[i].toPath());
+                    log.info("CONTENT : {}", new String(allBytes, StandardCharsets.UTF_8));
+                }
+                catch (IOException ex) {}
             }
         }
         final URLClassLoader classLoader = new URLClassLoader(Stream
