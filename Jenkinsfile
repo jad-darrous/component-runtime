@@ -115,7 +115,8 @@ spec:
                                bash .jenkins/scripts/setup_gpg.sh
                                """
                         }
-                        def pom = readMavenPom file: 'pom.xml'
+
+                        def pom = readMavenPom file: 'bom/pom.xml'
                         env.PROJECT_VERSION = pom.version
                         try {
                             EXTRA_BUILD_ARGS = params.EXTRA_BUILD_ARGS
