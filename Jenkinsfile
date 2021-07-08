@@ -147,7 +147,7 @@ spec:
             steps {
                 container('main') {
                     withCredentials([ossrhCredentials]) {
-                        sh "mvn install -f ./bom/pom.xml; mvn clean install $BUILD_ARGS $EXTRA_BUILD_ARGS -s .jenkins/settings.xml"
+                        sh "mvn install -f ./bom/pom.xml && mvn clean install $BUILD_ARGS $EXTRA_BUILD_ARGS -s .jenkins/settings.xml"
                     }
                 }
             }
