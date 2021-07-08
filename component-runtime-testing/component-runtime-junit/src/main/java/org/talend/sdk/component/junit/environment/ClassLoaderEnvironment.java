@@ -46,10 +46,17 @@ public abstract class ClassLoaderEnvironment extends BaseEnvironmentProvider {
         log.info("Resolve dependency {} in context {}", clazz.getName(), this.getClass().getName());
         final File compressFile = new File("/root/.m2/repository/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar");
         final File bomFile = new File("/root/.m2/repository/org/talend/sdk/component/component-bom/1.35.0-SNAPSHOT/component-bom-1.35.0-SNAPSHOT.pom");
-        final File bomFolder = new File("/root/.m2/repository/org/talend/sdk/component/component-bom");
+        final File bomFolder = new File("/root/.m2/repository/org/talend/sdk/component/component-bom/1.35.0-SNAPSHOT");
         log.info("COMPRESS JAR FILE exists={}", compressFile.exists());
         log.info("BOM FILE exists={}", bomFile.exists());
         log.info("BOM FOLDER exists={}", bomFolder.exists());
+        if (bomFolder.exists()) {
+            final File[] files = bomFolder.listFiles();
+            log.info("BOM FOLDER content size : {}", files.length);
+            for (int i = 0; i < files.length; i++) {
+                log.info("BOM FOLDER FILE : {}", files[i].getName());
+            }
+        }
         final URLClassLoader classLoader = new URLClassLoader(Stream
                 .of(rootDependencies())
                 .peek(dep -> log.info("Resolving " + dep + "..."))
