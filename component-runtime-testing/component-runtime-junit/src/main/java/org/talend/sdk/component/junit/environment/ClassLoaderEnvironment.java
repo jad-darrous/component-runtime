@@ -17,6 +17,7 @@ package org.talend.sdk.component.junit.environment;
 
 import static java.util.Optional.ofNullable;
 
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -42,6 +43,13 @@ public abstract class ClassLoaderEnvironment extends BaseEnvironmentProvider {
                     + "  org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-impl-maven:3.1.4");
         }
         final Thread thread = Thread.currentThread();
+        log.info("Resolve dependency {} in context {}", clazz.getName(), this.getClass().getName());
+        final File compressFile = new File("/root/.m2/repository/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar");
+        final File bomFile = new File("/root/.m2/repository/org/talend/sdk/component/component-bom/1.35.0-SNAPSHOT/component-bom-1.35.0-SNAPSHOT.pom");
+        final File bomFolder = new File("/root/.m2/repository/org/talend/sdk/component/component-bom");
+        log.info("COMPRESS JAR FILE exists={}", compressFile.exists());
+        log.info("BOM FILE exists={}", bomFile.exists());
+        log.info("BOM FOLDER exists={}", bomFolder.exists());
         final URLClassLoader classLoader = new URLClassLoader(Stream
                 .of(rootDependencies())
                 .peek(dep -> log.info("Resolving " + dep + "..."))
