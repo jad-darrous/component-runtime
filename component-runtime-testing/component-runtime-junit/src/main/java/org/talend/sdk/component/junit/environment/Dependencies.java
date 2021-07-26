@@ -45,9 +45,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.strategy.MavenResolutionStrategy;
 import org.jboss.shrinkwrap.resolver.impl.maven.PomEquippedResolveStageBaseImpl;
 
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @NoArgsConstructor(access = PRIVATE)
 public class Dependencies {
 
@@ -84,7 +82,6 @@ public class Dependencies {
             }
             final File pom = new File(current, "pom.xml");
             if (pom.exists()) {
-                log.info("Log pom file {}", pom.getPath());
                 final PomEquippedResolveStage localPom = Maven.configureResolver().loadPomFromFile(pom);
                 final MavenWorkingSession mavenWorkingSession =
                         PomEquippedResolveStageBaseImpl.class.cast(localPom).getMavenWorkingSession();
@@ -102,7 +99,6 @@ public class Dependencies {
                                     MavenRemoteRepositories.createRemoteRepository(r.getId(), r.getUrl(), "default");
                             repository.setUpdatePolicy(MavenUpdatePolicy.UPDATE_POLICY_DAILY);
                             repository.setChecksumPolicy(MavenChecksumPolicy.CHECKSUM_POLICY_IGNORE);
-                            log.info("Add repo {}", repository.getUrl());
                             repositories.add(repository);
                         });
                     }
@@ -132,9 +128,7 @@ public class Dependencies {
                     .withClassPathResolution(true)
                     .useLegacyLocalRepo(true)
                     .workOffline(Boolean.getBoolean("talend.component.junit.maven.offline"));
-            REPOSITORIES
-                    .forEach((MavenRemoteRepository repo) -> Dependencies.log
-                            .info("Repo for resolver {}", repo.getUrl()));
+
             REPOSITORIES.forEach(resolver::withRemoteRepo);
             resolver.addDependency(dep);
             final MavenStrategyStage strategyStage = resolver.resolve();

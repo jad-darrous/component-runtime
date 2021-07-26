@@ -17,13 +17,9 @@ package org.talend.sdk.component.junit.environment;
 
 import static java.util.Optional.ofNullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.stream.Stream;
 
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
@@ -46,32 +42,10 @@ public abstract class ClassLoaderEnvironment extends BaseEnvironmentProvider {
                     + "  org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-impl-maven:3.1.4");
         }
         final Thread thread = Thread.currentThread();
-        log.info("Resolve dependency {} in context {}", clazz.getName(), this.getClass().getName());
-        final File compressFile =
-                new File("/root/.m2/repository/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar");
-        final File bomFile = new File(
-                "/root/.m2/repository/org/talend/sdk/component/component-bom/1.35.0-SNAPSHOT/component-bom-1.35.0-SNAPSHOT.pom");
-        final File bomFolder = new File("/root/.m2/repository/org/talend/sdk/component/component-bom/1.35.0-SNAPSHOT");
-        log.info("COMPRESS JAR FILE exists={}", compressFile.exists());
-        log.info("BOM FILE exists={}", bomFile.exists());
-        log.info("BOM FOLDER exists={}", bomFolder.exists());
-        if (bomFolder.exists()) {
-            final File[] files = bomFolder.listFiles();
-            log.info("BOM FOLDER content size : {}", files.length);
-            for (int i = 0; i < files.length; i++) {
-                log.info("BOM FOLDER FILE : {}", files[i].getName());
-                try {
-                    final byte[] allBytes = Files.readAllBytes(files[i].toPath());
-                    log.info("CONTENT : {}", new String(allBytes, StandardCharsets.UTF_8));
-                } catch (IOException ex) {
-                }
-            }
-        }
         final URLClassLoader classLoader = new URLClassLoader(Stream
                 .of(rootDependencies())
                 .peek(dep -> log.info("Resolving " + dep + "..."))
                 .flatMap(dep -> Stream.of(Dependencies.resolve(dep)))
-                .peek((URL url) -> log.info("Found dependencies {}", url.getPath()))
                 .toArray(URL[]::new), Thread.currentThread().getContextClassLoader());
         final ClassLoader original = thread.getContextClassLoader();
         thread.setContextClassLoader(classLoader);
