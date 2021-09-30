@@ -46,6 +46,7 @@ import javax.json.stream.JsonGeneratorFactory;
 import javax.json.stream.JsonParserFactory;
 
 import org.apache.johnzon.mapper.MapperBuilder;
+import org.talend.sdk.component.api.component.InputFinder;
 import org.talend.sdk.component.api.record.RecordPointerFactory;
 import org.talend.sdk.component.api.service.cache.LocalCache;
 import org.talend.sdk.component.api.service.configuration.LocalConfiguration;
@@ -183,6 +184,11 @@ public class DefaultServiceProvider {
         }
         if (ObjectFactory.class == api) {
             return new ObjectFactoryImpl(id, propertyEditorRegistry);
+        }
+        if (InputFinder.class == api) {
+            final RecordService recordService =
+                    this.lookup(id, loader, localConfigLookup, resolver, RecordService.class, services);
+            return new InputFinderImpl(id, null, recordService::toRecord);
         }
         if (RecordPointerFactory.class == api) {
             return new RecordPointerFactoryImpl(id);
