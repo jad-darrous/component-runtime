@@ -829,10 +829,9 @@ public class ComponentManager implements AutoCloseable {
 
         final String pluginIdentifier = container.buildAutoIdFromName(plugin);
 
-        return ofNullable(pluginContainer.get(ContainerComponentRegistry.class))
-                .map((ContainerComponentRegistry r) -> r.getComponents().get(pluginIdentifier))
-                .map(component -> componentType.findMeta(component).get(name))
-                .map((ComponentFamilyMeta.BaseMeta comp) -> comp.instantiate(configuration, version));
+        final ComponentInstantiator.Builder builder = new ComponentInstantiator.BuilderDefault(() -> pluginContainer.get(ContainerComponentRegistry.class));
+        return ofNullable(builder.build(pluginIdentifier, name, componentType))
+                .map((ComponentInstantiator instantiator) -> instantiator.instantiate(configuration, version));
     }
 
     private Optional<Object> findGenericInstance(final String plugin, final String name,
