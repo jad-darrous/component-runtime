@@ -1,41 +1,65 @@
+/**
+ * Copyright (C) 2006-2021 Talend Inc. - www.talend.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.talend.sdk.component.runtime.manager.service;
-
-import lombok.RequiredArgsConstructor;
-import org.talend.sdk.component.api.component.InputFinder;
-import org.talend.sdk.component.api.component.MigrationHandler;
-import org.talend.sdk.component.api.record.Record;
-import org.talend.sdk.component.runtime.input.Input;
-import org.talend.sdk.component.runtime.input.Mapper;
-import org.talend.sdk.component.runtime.manager.ComponentFamilyMeta;
-import org.talend.sdk.component.runtime.record.RecordConverters;
-import org.talend.sdk.component.runtime.serialization.SerializableService;
 
 import java.io.ObjectStreamException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
-import java.util.function.Supplier;
+
+import org.talend.sdk.component.api.component.InputFinder;
+import org.talend.sdk.component.api.record.Record;
+import org.talend.sdk.component.runtime.input.Input;
+import org.talend.sdk.component.runtime.input.Mapper;
+import org.talend.sdk.component.runtime.manager.ComponentManager;
+import org.talend.sdk.component.runtime.manager.service.api.ComponentInstantiator;
+import org.talend.sdk.component.runtime.serialization.SerializableService;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class InputFinderImpl implements InputFinder {
 
     private final String plugin;
 
-    private final Function<String, ComponentFamilyMeta.BaseMeta<Mapper>> mapperFinder;
+    private final ComponentInstantiator.Builder mapperFinder;
 
     private final Function<Object, Record> recordConverter;
 
     @Override
-    public Iterator<Record> find(String emitterIdentifier,
-            int version,
-            Map<String, String> configuration) {
+    public Iterator<Record> find(final String pluginIdentifier, final String name, final int version,
+            final Map<String, String> configuration) {
 
-        final Mapper mapper = this.findMapper(emitterIdentifier, version, configuration);
+        final ComponentInstantiator instantiator =
+                this.mapperFinder.build(pluginIdentifier, name, ComponentManager.ComponentType.MAPPER);
+        final Mapper mapper = this.findMapper(instantiator, version, configuration);
         final Input input = mapper.create();
         final Iterator<Object> iteratorObject = new InputIterator(input);
 
         return new IteratorMap<>(iteratorObject, this.recordConverter);
+    }
+
+    private Mapper findMapper(final ComponentInstantiator instantiator, final int version,
+            final Map<String, String> configuration) {
+        return (Mapper) instantiator.instantiate(configuration, version);
+    }
+
+    private Object writeReplace() throws ObjectStreamException {
+        return new SerializableService(plugin, InputFinder.class.getName());
     }
 
     static class InputIterator implements Iterator<Object> {
@@ -44,13 +68,28 @@ public class InputFinderImpl implements InputFinder {
 
         private Object nextObject;
 
-        InputIterator(Input input) {
+        private boolean init = false;
+
+        InputIterator(final Input input) {
             this.input = input;
-            this.nextObject = InputIterator.findNext(input);
+        }
+
+        private static Object findNext(final Input input) {
+            return input.next();
         }
 
         @Override
         public boolean hasNext() {
+            synchronized (this.input) {
+                if (!init) {
+                    this.init = true;
+                    this.input.start();
+                    this.nextObject = InputIterator.findNext(input);
+                }
+                if (this.nextObject == null) {
+                    this.input.stop();
+                }
+            }
             return this.nextObject != null;
         }
 
@@ -62,10 +101,6 @@ public class InputFinderImpl implements InputFinder {
             final Object current = this.nextObject;
             this.nextObject = InputIterator.findNext(input);
             return current;
-        }
-
-        private static Object findNext(final Input input) {
-            return input.next();
         }
     }
 
@@ -86,21 +121,5 @@ public class InputFinderImpl implements InputFinder {
             final T next = this.wrappedIterator.next();
             return this.converter.apply(next);
         }
-    }
-
-    private Mapper findMapper(String emitterIdentifier,
-            int version,
-            Map<String, String> configuration) {
-        final ComponentFamilyMeta.BaseMeta<Mapper> meta = this.mapperFinder.apply(emitterIdentifier);
-        if (configuration == null) {
-            return meta.getInstantiator().apply(null);
-        }
-        final Supplier<MigrationHandler> migrationHandler = meta.getMigrationHandler();
-        final Map<String, String> migratedConfiguration = migrationHandler.get().migrate(version, configuration);
-        return meta.getInstantiator().apply(migratedConfiguration);
-    }
-
-    private Object writeReplace() throws ObjectStreamException {
-        return new SerializableService(plugin, InputFinder.class.getName());
     }
 }

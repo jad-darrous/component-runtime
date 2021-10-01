@@ -60,6 +60,7 @@ import org.talend.sdk.component.runtime.manager.asm.ProxyGenerator;
 import org.talend.sdk.component.runtime.manager.json.PreComputedJsonpProvider;
 import org.talend.sdk.component.runtime.manager.proxy.JavaProxyEnricherFactory;
 import org.talend.sdk.component.runtime.manager.reflect.ReflectionService;
+import org.talend.sdk.component.runtime.manager.service.api.ComponentInstantiator;
 import org.talend.sdk.component.runtime.manager.service.configuration.PropertiesConfiguration;
 import org.talend.sdk.component.runtime.manager.service.http.HttpClientFactoryImpl;
 import org.talend.sdk.component.runtime.manager.util.Lazy;
@@ -107,13 +108,14 @@ public class DefaultServiceProvider {
 
     public <T> T lookup(final String id, final ClassLoader loader, final Supplier<List<InputStream>> localConfigLookup,
             final Function<String, Path> resolver, final Class<T> api,
-            final AtomicReference<Map<Class<?>, Object>> services) {
-        return api.cast(doLookup(id, loader, localConfigLookup, resolver, api, services));
+            final AtomicReference<Map<Class<?>, Object>> services, final ComponentInstantiator.Builder instantiators) {
+        return api.cast(doLookup(id, loader, localConfigLookup, resolver, api, services, instantiators));
     }
 
     private Object doLookup(final String id, final ClassLoader loader,
             final Supplier<List<InputStream>> localConfigLookup, final Function<String, Path> resolver,
-            final Class<?> api, final AtomicReference<Map<Class<?>, Object>> services) {
+            final Class<?> api, final AtomicReference<Map<Class<?>, Object>> services,
+            final ComponentInstantiator.Builder instantiators) {
         if (JsonProvider.class == api) {
             return new PreComputedJsonpProvider(id, jsonpProvider, jsonpParserFactory, jsonpWriterFactory,
                     jsonpBuilderFactory, jsonpGeneratorFactory, jsonpReaderFactory);
@@ -142,7 +144,8 @@ public class DefaultServiceProvider {
             final JsonbBuilder jsonbBuilder = createPojoJsonbBuilder(id,
                     Lazy
                             .lazy(() -> Jsonb.class
-                                    .cast(doLookup(id, loader, localConfigLookup, resolver, Jsonb.class, services))));
+                                    .cast(doLookup(id, loader, localConfigLookup, resolver, Jsonb.class, services,
+                                            instantiators))));
             return new GenericOrPojoJsonb(id, jsonbProvider
                     .create()
                     .withProvider(jsonpProvider) // reuses the same memory buffering
@@ -187,8 +190,9 @@ public class DefaultServiceProvider {
         }
         if (InputFinder.class == api) {
             final RecordService recordService =
-                    this.lookup(id, loader, localConfigLookup, resolver, RecordService.class, services);
-            return new InputFinderImpl(id, null, recordService::toRecord);
+                    this.lookup(id, loader, localConfigLookup, resolver, RecordService.class, services, instantiators);
+
+            return new InputFinderImpl(id, instantiators, recordService::toRecord);
         }
         if (RecordPointerFactory.class == api) {
             return new RecordPointerFactoryImpl(id);
@@ -201,7 +205,8 @@ public class DefaultServiceProvider {
                     () -> jsonpProvider,
                     Lazy
                             .lazy(() -> Jsonb.class
-                                    .cast(doLookup(id, loader, localConfigLookup, resolver, Jsonb.class, services))));
+                                    .cast(doLookup(id, loader, localConfigLookup, resolver, Jsonb.class, services,
+                                            instantiators))));
         }
         return null;
     }

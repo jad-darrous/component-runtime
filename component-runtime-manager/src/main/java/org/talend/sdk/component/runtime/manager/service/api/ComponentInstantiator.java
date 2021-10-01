@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.talend.sdk.component.api.component;
+package org.talend.sdk.component.runtime.manager.service.api;
 
-import java.io.Serializable;
-import java.util.Iterator;
 import java.util.Map;
 
-import org.talend.sdk.component.api.record.Record;
+import org.talend.sdk.component.runtime.base.Lifecycle;
+import org.talend.sdk.component.runtime.manager.ComponentManager;
 
-public interface InputFinder extends Serializable {
+@FunctionalInterface
+public interface ComponentInstantiator {
 
-    Iterator<Record> find(final String pluginIdentifier, final String name, final int version,
-            final Map<String, String> configuration);
+    Lifecycle instantiate(final Map<String, String> configuration, final int configVersion);
+
+    @FunctionalInterface
+    interface Builder {
+
+        ComponentInstantiator build(final String pluginId, final String name,
+                final ComponentManager.ComponentType componentType);
+    }
 }

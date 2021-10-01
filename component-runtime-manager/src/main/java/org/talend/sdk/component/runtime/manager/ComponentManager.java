@@ -116,7 +116,6 @@ import org.apache.xbean.finder.filter.PrefixFilter;
 import org.apache.xbean.finder.util.Files;
 import org.apache.xbean.propertyeditor.Converter;
 import org.talend.sdk.component.api.component.Components;
-import org.talend.sdk.component.api.component.MigrationHandler;
 import org.talend.sdk.component.api.component.Version;
 import org.talend.sdk.component.api.input.Emitter;
 import org.talend.sdk.component.api.input.PartitionMapper;
@@ -143,6 +142,7 @@ import org.talend.sdk.component.dependencies.maven.MvnDependencyListLocalReposit
 import org.talend.sdk.component.jmx.JmxManager;
 import org.talend.sdk.component.path.PathFactory;
 import org.talend.sdk.component.runtime.base.Delegated;
+import org.talend.sdk.component.runtime.base.Lifecycle;
 import org.talend.sdk.component.runtime.impl.Mode;
 import org.talend.sdk.component.runtime.input.LocalPartitionMapper;
 import org.talend.sdk.component.runtime.input.Mapper;
@@ -162,6 +162,7 @@ import org.talend.sdk.component.runtime.manager.reflect.ReflectionService;
 import org.talend.sdk.component.runtime.manager.reflect.parameterenricher.BaseParameterEnricher;
 import org.talend.sdk.component.runtime.manager.service.DefaultServiceProvider;
 import org.talend.sdk.component.runtime.manager.service.ServiceHelper;
+import org.talend.sdk.component.runtime.manager.service.api.ComponentInstantiator;
 import org.talend.sdk.component.runtime.manager.service.record.RecordBuilderFactoryProvider;
 import org.talend.sdk.component.runtime.manager.spi.ContainerListenerExtension;
 import org.talend.sdk.component.runtime.manager.util.Lazy;
@@ -819,28 +820,19 @@ public class ComponentManager implements AutoCloseable {
         return findGenericInstance(plugin, name, componentType, version, configuration, pluginContainer)
                 .orElseGet(
                         () -> findDeployedInstance(plugin, name, componentType, version, configuration, pluginContainer)
-                                .filter(Objects::nonNull)
-                                .findFirst()
                                 .orElse(null));
     }
 
-    private Stream<Object> findDeployedInstance(final String plugin, final String name,
+    private Optional<Object> findDeployedInstance(final String plugin, final String name,
             final ComponentType componentType, final int version, final Map<String, String> configuration,
             final Container pluginContainer) {
-        return Stream
-                .of(pluginContainer.get(ContainerComponentRegistry.class))
-                .filter(Objects::nonNull)
-                .map(r -> r.getComponents().get(container.buildAutoIdFromName(plugin)))
-                .filter(Objects::nonNull)
+
+        final String pluginIdentifier = container.buildAutoIdFromName(plugin);
+
+        return ofNullable(pluginContainer.get(ContainerComponentRegistry.class))
+                .map((ContainerComponentRegistry r) -> r.getComponents().get(pluginIdentifier))
                 .map(component -> componentType.findMeta(component).get(name))
-                .filter(Objects::nonNull)
-                .map(comp -> {
-                    if (configuration == null) {
-                        return comp.getInstantiator().apply(null);
-                    }
-                    final Supplier<MigrationHandler> migrationHandler = comp.getMigrationHandler();
-                    return comp.getInstantiator().apply(migrationHandler.get().migrate(version, configuration));
-                });
+                .map((ComponentFamilyMeta.BaseMeta comp) -> comp.instantiate(configuration, version));
     }
 
     private Optional<Object> findGenericInstance(final String plugin, final String name,
@@ -1086,7 +1078,7 @@ public class ComponentManager implements AutoCloseable {
             }
 
             @Override
-            Class<?> runtimeType() {
+            Class<? extends Lifecycle> runtimeType() {
                 return Mapper.class;
             }
         },
@@ -1098,7 +1090,7 @@ public class ComponentManager implements AutoCloseable {
             }
 
             @Override
-            Class<?> runtimeType() {
+            Class<? extends Lifecycle> runtimeType() {
                 return org.talend.sdk.component.runtime.output.Processor.class;
             }
         },
@@ -1110,14 +1102,14 @@ public class ComponentManager implements AutoCloseable {
             }
 
             @Override
-            Class<?> runtimeType() {
+            Class<? extends Lifecycle> runtimeType() {
                 return org.talend.sdk.component.runtime.standalone.DriverRunner.class;
             }
         };
 
         abstract Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(ComponentFamilyMeta family);
 
-        abstract Class<?> runtimeType();
+        abstract Class<? extends Lifecycle> runtimeType();
     }
 
     @AllArgsConstructor
@@ -1261,13 +1253,22 @@ public class ComponentManager implements AutoCloseable {
             }
 
             final AtomicReference<Map<Class<?>, Object>> seviceLookupRef = new AtomicReference<>();
+
+            final ComponentInstantiator.Builder builder = (String pluginIdentifier, String name,
+                    ComponentType componentType) -> ofNullable(container.get(ContainerComponentRegistry.class))
+                            .map((ContainerComponentRegistry r) -> r.findComponentFamily(pluginIdentifier))
+                            .map(componentType::findMeta)
+                            .map((map) -> map.get(name))
+                            .map((ComponentFamilyMeta.BaseMeta c) -> (ComponentInstantiator) c::instantiate)
+                            .orElse(null);
+
             final Map<Class<?>, Object> services = new LazyMap<>(24,
                     type -> defaultServiceProvider
                             .lookup(container.getId(), container.getLoader(),
                                     () -> container
                                             .getLoader()
                                             .findContainedResources("TALEND-INF/local-configuration.properties"),
-                                    container.getLocalDependencyRelativeResolver(), type, seviceLookupRef));
+                                    container.getLocalDependencyRelativeResolver(), type, seviceLookupRef, builder));
             seviceLookupRef.set(services);
 
             final AllServices allServices = new AllServices(services);
