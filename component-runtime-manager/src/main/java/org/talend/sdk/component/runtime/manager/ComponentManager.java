@@ -1073,7 +1073,7 @@ public class ComponentManager implements AutoCloseable {
         MAPPER {
 
             @Override
-            Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(final ComponentFamilyMeta family) {
+            public Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(final ComponentFamilyMeta family) {
                 return family.getPartitionMappers();
             }
 
@@ -1085,7 +1085,7 @@ public class ComponentManager implements AutoCloseable {
         PROCESSOR {
 
             @Override
-            Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(final ComponentFamilyMeta family) {
+            public Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(final ComponentFamilyMeta family) {
                 return family.getProcessors();
             }
 
@@ -1097,7 +1097,7 @@ public class ComponentManager implements AutoCloseable {
         DRIVER_RUNNER {
 
             @Override
-            Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(final ComponentFamilyMeta family) {
+            public Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(final ComponentFamilyMeta family) {
                 return family.getDriverRunners();
             }
 
@@ -1107,7 +1107,7 @@ public class ComponentManager implements AutoCloseable {
             }
         };
 
-        abstract Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(ComponentFamilyMeta family);
+        abstract public Map<String, ? extends ComponentFamilyMeta.BaseMeta> findMeta(ComponentFamilyMeta family);
 
         abstract Class<? extends Lifecycle> runtimeType();
     }
@@ -1254,13 +1254,8 @@ public class ComponentManager implements AutoCloseable {
 
             final AtomicReference<Map<Class<?>, Object>> seviceLookupRef = new AtomicReference<>();
 
-            final ComponentInstantiator.Builder builder = (String pluginIdentifier, String name,
-                    ComponentType componentType) -> ofNullable(container.get(ContainerComponentRegistry.class))
-                            .map((ContainerComponentRegistry r) -> r.findComponentFamily(pluginIdentifier))
-                            .map(componentType::findMeta)
-                            .map((map) -> map.get(name))
-                            .map((ComponentFamilyMeta.BaseMeta c) -> (ComponentInstantiator) c::instantiate)
-                            .orElse(null);
+            final ComponentInstantiator.Builder builder =
+                    new ComponentInstantiator.BuilderDefault(() -> container.get(ContainerComponentRegistry.class));
 
             final Map<Class<?>, Object> services = new LazyMap<>(24,
                     type -> defaultServiceProvider

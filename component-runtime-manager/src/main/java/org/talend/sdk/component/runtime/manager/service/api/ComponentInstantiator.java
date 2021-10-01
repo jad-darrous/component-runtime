@@ -16,9 +16,15 @@
 package org.talend.sdk.component.runtime.manager.service.api;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.talend.sdk.component.runtime.base.Lifecycle;
-import org.talend.sdk.component.runtime.manager.ComponentManager;
+import org.talend.sdk.component.runtime.manager.ComponentFamilyMeta;
+import org.talend.sdk.component.runtime.manager.ComponentManager.ComponentType;
+import org.talend.sdk.component.runtime.manager.ContainerComponentRegistry;
+
+import lombok.RequiredArgsConstructor;
 
 @FunctionalInterface
 public interface ComponentInstantiator {
@@ -28,7 +34,24 @@ public interface ComponentInstantiator {
     @FunctionalInterface
     interface Builder {
 
-        ComponentInstantiator build(final String pluginId, final String name,
-                final ComponentManager.ComponentType componentType);
+        ComponentInstantiator build(final String pluginId, final String name, final ComponentType componentType);
+    }
+
+    @RequiredArgsConstructor
+    class BuilderDefault implements Builder {
+
+        private final Supplier<ContainerComponentRegistry> registryGetter;
+
+        @Override
+        public ComponentInstantiator build(final String pluginIdentifier, final String name,
+                final ComponentType componentType) {
+            return Optional
+                    .ofNullable(this.registryGetter.get())
+                    .map((ContainerComponentRegistry registry) -> registry.findComponentFamily(pluginIdentifier))
+                    .map(componentType::findMeta)
+                    .map((map) -> map.get(name))
+                    .map((ComponentFamilyMeta.BaseMeta c) -> (ComponentInstantiator) c::instantiate)
+                    .orElse(null);
+        }
     }
 }
