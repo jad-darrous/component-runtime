@@ -31,7 +31,7 @@ public class ContainerComponentRegistry {
 
     private final Collection<ServiceMeta> services = new ArrayList<>();
 
-    public ComponentFamilyMeta findComponentFamily(final String pluginIdentifier) {
-        return this.components.get(pluginIdentifier);
+    public ComponentFamilyMeta findComponentFamily(final String familyName) {
+        return this.components.get(familyName);
     }
 }

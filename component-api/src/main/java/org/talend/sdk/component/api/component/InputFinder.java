@@ -21,8 +21,22 @@ import java.util.Map;
 
 import org.talend.sdk.component.api.record.Record;
 
+/**
+ * This service aims to retrieve a record iterator based on a configured dataset of a connector.
+ * it's is expected that Producer has no extra-configuration on dataset and is a finite producer (not a queue for
+ * example).
+ */
 public interface InputFinder extends Serializable {
 
-    Iterator<Record> find(final String pluginIdentifier, final String name, final int version,
+    /**
+     * Retrieve iterator.
+     * 
+     * @param familyName :
+     * @param datasetName : name of the input (producer or partition mapper).
+     * @param version : version of configuration.
+     * @param configuration : dataset configuration.
+     * @return
+     */
+    Iterator<Record> find(final String familyName, final String datasetName, final int version,
             final Map<String, String> configuration);
 }

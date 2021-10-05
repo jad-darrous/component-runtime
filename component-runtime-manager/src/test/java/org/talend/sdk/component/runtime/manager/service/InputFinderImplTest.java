@@ -39,8 +39,9 @@ class InputFinderImplTest {
 
     @Test
     void find() {
-        final ComponentInstantiator.Builder builder = (final String pluginId, final String name,
-                final ComponentManager.ComponentType componentType) -> this::instantiate;
+        final ComponentInstantiator.Builder builder =
+                (final String pluginId, final ComponentInstantiator.MetaFinder finder,
+                        final ComponentManager.ComponentType componentType) -> this::instantiate;
 
         InputFinderImplTest.state = 0;
         final InputFinderImpl finder = new InputFinderImpl("ThePlugin", builder, this::toRecord);

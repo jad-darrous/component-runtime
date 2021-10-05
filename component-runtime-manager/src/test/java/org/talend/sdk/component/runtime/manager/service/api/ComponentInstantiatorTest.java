@@ -23,11 +23,9 @@ import org.talend.sdk.component.runtime.input.Mapper;
 import org.talend.sdk.component.runtime.manager.ComponentFamilyMeta;
 import org.talend.sdk.component.runtime.manager.ComponentManager;
 import org.talend.sdk.component.runtime.manager.ContainerComponentRegistry;
+import org.talend.sdk.component.runtime.manager.ParameterMeta;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 class ComponentInstantiatorTest {
 
@@ -43,9 +41,10 @@ class ComponentInstantiatorTest {
         registry.getComponents().put("pluginId", familyMeta);
 
         ComponentInstantiator.BuilderDefault builder = new ComponentInstantiator.BuilderDefault(() -> registry);
+        ComponentInstantiator.MetaFinder finder = new ComponentInstantiator.DatasetFinder("TheDataSet");
 
         final ComponentInstantiator instanciator =
-                builder.build("pluginId", "name", ComponentManager.ComponentType.MAPPER);
+                builder.build("pluginId", finder, ComponentManager.ComponentType.MAPPER);
         final Lifecycle lifecycle = instanciator.instantiate(Collections.emptyMap(), 2);
 
         Assertions.assertNotNull(lifecycle, "lifecycle is null");
@@ -55,10 +54,52 @@ class ComponentInstantiatorTest {
     static class FakeMapperMeta extends ComponentFamilyMeta.PartitionMapperMeta {
 
         public FakeMapperMeta(final ComponentFamilyMeta familyMeta) {
-            super(familyMeta, "name", "icon", 1, FakeMapper.class, () -> Collections.emptyList(),
+            super(familyMeta, "name", "icon", 1, FakeMapper.class, ComponentInstantiatorTest::getMetas,
                     (Map<String, String> cfg) -> new FakeMapper(),
                     () -> (int incomingVersion, Map<String, String> incomingData) -> incomingData, true, false);
         }
+    }
+
+    @Test
+    void testFinder() {
+        final ComponentInstantiator.DatasetFinder dataSet = new ComponentInstantiator.DatasetFinder("TheDataSet");
+        Assertions.assertFalse(dataSet.filter(Collections.emptyMap()).isPresent());
+
+        final ComponentFamilyMeta familyMeta =
+                new ComponentFamilyMeta("pluginId", Arrays.asList("cat1", "cat2"), "theIcon", "name", "packageName");
+
+        final ComponentFamilyMeta.PartitionMapperMeta meta1 = new FakeMapperMeta(familyMeta);
+        final Map<String, ComponentFamilyMeta.BaseMeta> meta = new HashMap<>();
+        meta.put("meta1", meta1);
+        final Optional<? extends ComponentFamilyMeta.BaseMeta> baseMeta = dataSet.filter(meta);
+        Assertions.assertTrue(baseMeta.isPresent());
+        Assertions.assertSame(meta1, baseMeta.get());
+
+    }
+
+    static List<ParameterMeta> getMetas() {
+        final ParameterMeta.Source source = new ParameterMeta.Source() {
+
+            @Override
+            public String name() {
+                return null;
+            }
+
+            @Override
+            public Class<?> declaringClass() {
+                return null;
+            }
+        };
+        Map<String, String> goodMap = new HashMap<>();
+        goodMap.put("tcomp::configuration::type", "dataset");
+        goodMap.put("tcomp::configuration::name", "TheDataSet");
+        final ParameterMeta meta1 = new ParameterMeta(source, Object.class, ParameterMeta.Type.OBJECT, "thePath",
+                "name", null, Collections.emptyList(), Collections.emptyList(), goodMap, true);
+        ParameterMeta meta2 = new ParameterMeta(source, Object.class, ParameterMeta.Type.OBJECT, "thePath", "name",
+                null, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), true);
+        ParameterMeta meta3 = new ParameterMeta(source, Object.class, ParameterMeta.Type.OBJECT, "thePath", "name",
+                null, Arrays.asList(meta1, meta2), Collections.emptyList(), Collections.emptyMap(), true);
+        return Arrays.asList(meta2, meta3);
     }
 
     static class FakeMapper implements Mapper {
