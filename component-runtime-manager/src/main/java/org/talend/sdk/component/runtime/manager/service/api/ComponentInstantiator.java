@@ -15,9 +15,10 @@
  */
 package org.talend.sdk.component.runtime.manager.service.api;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.talend.sdk.component.runtime.base.Lifecycle;
 import org.talend.sdk.component.runtime.manager.ComponentFamilyMeta;
@@ -26,7 +27,6 @@ import org.talend.sdk.component.runtime.manager.ContainerComponentRegistry;
 import org.talend.sdk.component.runtime.manager.ParameterMeta;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @FunctionalInterface
 public interface ComponentInstantiator {
@@ -46,22 +46,21 @@ public interface ComponentInstantiator {
     @FunctionalInterface
     interface Builder {
 
-        ComponentInstantiator build(final String pluginId, final String familyName, final MetaFinder finder,
+        ComponentInstantiator build(final String familyName, final MetaFinder finder,
                 final ComponentType componentType);
     }
 
     @RequiredArgsConstructor
     class BuilderDefault implements Builder {
 
-        private final Function<String, ContainerComponentRegistry> pluginLoader;
+        private final Supplier<ContainerComponentRegistry> registrySupplier;
 
         @Override
-        public ComponentInstantiator build(final String pluginId, final String familyName, final MetaFinder finder,
+        public ComponentInstantiator build(final String familyName, final MetaFinder finder,
                 final ComponentType componentType) {
-
             return Optional
-                    .ofNullable(this.pluginLoader.apply(pluginId))
-                    .map((ContainerComponentRegistry registry) -> registry.findComponentFamily(pluginId))
+                    .ofNullable(this.registrySupplier.get())
+                    .map((ContainerComponentRegistry registry) -> registry.findComponentFamily(familyName))
                     .map(componentType::findMeta)
                     .flatMap((Map<String, ? extends ComponentFamilyMeta.BaseMeta> map) -> finder.filter(map))
                     .map((ComponentFamilyMeta.BaseMeta c) -> (ComponentInstantiator) c::instantiate)
@@ -81,11 +80,10 @@ public interface ComponentInstantiator {
         }
     }
 
-    @Slf4j
     @RequiredArgsConstructor
     class DatasetFinder implements MetaFinder {
 
-        // private final String datasetName;
+        private final String datasetName;
 
         @Override
         public Optional<? extends ComponentFamilyMeta.BaseMeta>
@@ -94,17 +92,13 @@ public interface ComponentInstantiator {
         }
 
         private boolean isOK(final ComponentFamilyMeta.BaseMeta meta) {
-            log.info("Search in meta " + meta == null ? "null" : meta.getName());
-            return meta instanceof ComponentFamilyMeta.PartitionMapperMeta;
-            /*
-             * if (!(meta instanceof ComponentFamilyMeta.PartitionMapperMeta)) {
-             * return false;
-             * }
-             * final Supplier<List<ParameterMeta>> parameterMetas = meta.getParameterMetas();
-             * final List<ParameterMeta> metas = parameterMetas.get();
-             * 
-             * return metas.parallelStream().anyMatch(this::containsDataset);
-             */
+            if (!(meta instanceof ComponentFamilyMeta.PartitionMapperMeta)) {
+                return false;
+            }
+            final Supplier<List<ParameterMeta>> parameterMetas = meta.getParameterMetas();
+            final List<ParameterMeta> metas = parameterMetas.get();
+
+            return metas.parallelStream().anyMatch(this::containsDataset);
         }
 
         private boolean containsDataset(final ParameterMeta parameters) {
@@ -114,13 +108,8 @@ public interface ComponentInstantiator {
 
         private boolean isDataset(final ParameterMeta parameters) {
             final Map<String, String> metadata = parameters.getMetadata();
-            final String configType = metadata.get("tcomp::configuration::type");
-            final String configName = metadata.get("tcomp::configuration::name");
-            log.info("Parameters {} datset with type {} and name {}", parameters.getName(), configType, configName);
-            if (configType == null || configName == null) {
-                metadata.entrySet().stream().forEach(e -> log.info("'{}' = '{}'", e.getKey(), e.getValue()));
-            }
-            return "dataset".equals(configType); // && this.datasetName.equals(configName);
+            return "dataset".equals(metadata.get("tcomp::configuration::type"))
+                    && this.datasetName.equals(metadata.get("tcomp::configuration::name"));
         }
     }
 }

@@ -41,12 +41,12 @@ public class InputFinderImpl implements InputFinder {
     private final Function<Object, Record> recordConverter;
 
     @Override
-    public Iterator<Record> find(final String pluginName, final String familyName, final int version,
+    public Iterator<Record> find(final String familyName, final String datasetName, final int version,
             final Map<String, String> configuration) {
 
-        final ComponentInstantiator.DatasetFinder datasetFinder = new ComponentInstantiator.DatasetFinder(); // datasetName);
+        final ComponentInstantiator.DatasetFinder datasetFinder = new ComponentInstantiator.DatasetFinder(datasetName);
         final ComponentInstantiator instantiator =
-                this.mapperFinder.build(pluginName, familyName, datasetFinder, ComponentManager.ComponentType.MAPPER);
+                this.mapperFinder.build(familyName, datasetFinder, ComponentManager.ComponentType.MAPPER);
         final Mapper mapper = this.findMapper(instantiator, version, configuration);
         final Input input = mapper.create();
         final Iterator<Object> iteratorObject = new InputIterator(input);
