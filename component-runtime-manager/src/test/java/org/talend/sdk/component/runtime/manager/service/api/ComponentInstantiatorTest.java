@@ -40,11 +40,11 @@ class ComponentInstantiatorTest {
 
         registry.getComponents().put("pluginId", familyMeta);
 
-        ComponentInstantiator.BuilderDefault builder = new ComponentInstantiator.BuilderDefault(() -> registry);
-        ComponentInstantiator.MetaFinder finder = new ComponentInstantiator.DatasetFinder("TheDataSet");
+        ComponentInstantiator.BuilderDefault builder = new ComponentInstantiator.BuilderDefault((String x) -> registry);
+        ComponentInstantiator.MetaFinder finder = new ComponentInstantiator.DatasetFinder();
 
         final ComponentInstantiator instanciator =
-                builder.build("pluginId", finder, ComponentManager.ComponentType.MAPPER);
+                builder.build("pluginId", "TheDataSet", finder, ComponentManager.ComponentType.MAPPER);
         final Lifecycle lifecycle = instanciator.instantiate(Collections.emptyMap(), 2);
 
         Assertions.assertNotNull(lifecycle, "lifecycle is null");
@@ -62,7 +62,7 @@ class ComponentInstantiatorTest {
 
     @Test
     void testFinder() {
-        final ComponentInstantiator.DatasetFinder dataSet = new ComponentInstantiator.DatasetFinder("TheDataSet");
+        final ComponentInstantiator.DatasetFinder dataSet = new ComponentInstantiator.DatasetFinder();
         Assertions.assertFalse(dataSet.filter(Collections.emptyMap()).isPresent());
 
         final ComponentFamilyMeta familyMeta =

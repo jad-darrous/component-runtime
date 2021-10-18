@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
-import org.talend.sdk.component.api.component.InputFinder;
 import org.talend.sdk.component.api.record.Record;
+import org.talend.sdk.component.api.service.source.InputFinder;
 import org.talend.sdk.component.runtime.input.Input;
 import org.talend.sdk.component.runtime.input.Mapper;
 import org.talend.sdk.component.runtime.manager.ComponentManager;
@@ -41,12 +41,12 @@ public class InputFinderImpl implements InputFinder {
     private final Function<Object, Record> recordConverter;
 
     @Override
-    public Iterator<Record> find(final String familyName, final String datasetName, final int version,
+    public Iterator<Record> find(final String pluginName, final String familyName, final int version,
             final Map<String, String> configuration) {
 
-        final ComponentInstantiator.DatasetFinder datasetFinder = new ComponentInstantiator.DatasetFinder(datasetName);
+        final ComponentInstantiator.DatasetFinder datasetFinder = new ComponentInstantiator.DatasetFinder(); // datasetName);
         final ComponentInstantiator instantiator =
-                this.mapperFinder.build(familyName, datasetFinder, ComponentManager.ComponentType.MAPPER);
+                this.mapperFinder.build(pluginName, familyName, datasetFinder, ComponentManager.ComponentType.MAPPER);
         final Mapper mapper = this.findMapper(instantiator, version, configuration);
         final Input input = mapper.create();
         final Iterator<Object> iteratorObject = new InputIterator(input);

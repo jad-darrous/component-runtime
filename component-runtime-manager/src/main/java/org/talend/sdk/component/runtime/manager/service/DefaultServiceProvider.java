@@ -46,7 +46,6 @@ import javax.json.stream.JsonGeneratorFactory;
 import javax.json.stream.JsonParserFactory;
 
 import org.apache.johnzon.mapper.MapperBuilder;
-import org.talend.sdk.component.api.component.InputFinder;
 import org.talend.sdk.component.api.record.RecordPointerFactory;
 import org.talend.sdk.component.api.service.cache.LocalCache;
 import org.talend.sdk.component.api.service.configuration.LocalConfiguration;
@@ -56,6 +55,7 @@ import org.talend.sdk.component.api.service.http.HttpClientFactory;
 import org.talend.sdk.component.api.service.injector.Injector;
 import org.talend.sdk.component.api.service.record.RecordBuilderFactory;
 import org.talend.sdk.component.api.service.record.RecordService;
+import org.talend.sdk.component.api.service.source.InputFinder;
 import org.talend.sdk.component.runtime.manager.asm.ProxyGenerator;
 import org.talend.sdk.component.runtime.manager.json.PreComputedJsonpProvider;
 import org.talend.sdk.component.runtime.manager.proxy.JavaProxyEnricherFactory;

@@ -465,7 +465,7 @@ public class ComponentManager implements AutoCloseable {
                         .orElseGet(() -> super.resolve(path));
             }
         };
-        this.container.registerListener(new Updater(dependenciesResource));
+        this.container.registerListener(new Updater(dependenciesResource, this::loadPlugin));
         if (!Boolean.getBoolean("talend.component.manager.jmx.skip")) {
             ofNullable(jmxNamePattern)
                     .map(String::trim)
@@ -829,10 +829,11 @@ public class ComponentManager implements AutoCloseable {
 
         final String pluginIdentifier = container.buildAutoIdFromName(plugin);
 
-        final ComponentInstantiator.Builder builder =
-                new ComponentInstantiator.BuilderDefault(() -> pluginContainer.get(ContainerComponentRegistry.class));
-        return ofNullable(
-                builder.build(pluginIdentifier, ComponentInstantiator.MetaFinder.ofComponent(name), componentType))
+        final ComponentInstantiator.Builder builder = new ComponentInstantiator.BuilderDefault(
+                (String x) -> pluginContainer.get(ContainerComponentRegistry.class));
+
+        return ofNullable(builder
+                .build(pluginIdentifier, name, ComponentInstantiator.MetaFinder.ofComponent(name), componentType))
                         .map((ComponentInstantiator instantiator) -> instantiator.instantiate(configuration, version));
     }
 
@@ -887,6 +888,44 @@ public class ComponentManager implements AutoCloseable {
                 .getId();
         info("Adding plugin: " + pluginRootFile + ", as " + id);
         return id;
+    }
+
+    /**
+     * org.talend.components.rest ==> rest.
+     * 
+     * @param pluginName : last name of a package of a connector.
+     * @return Container component.
+     */
+    private ContainerComponentRegistry loadPlugin(final String pluginName) {
+        final Optional<Path> jarPath;
+
+        // Find jar path of plugin.
+        // TODO : to be done externally.
+        final Path rootPath = this.getContainer().getRootRepositoryLocationPath();
+        final Path pluginsRootPath = rootPath.resolve("org").resolve("talend").resolve("components");
+        final Path pluginPath = pluginsRootPath.resolve(pluginName.toLowerCase(Locale.ENGLISH));
+        if (pluginPath.toFile().exists()) {
+            try (final Stream<Path> pathStream = java.nio.file.Files.walk(pluginPath)) {
+                jarPath = pathStream
+                        .filter(java.nio.file.Files::isRegularFile)
+                        .filter((Path p) -> p.getFileName().toString().endsWith(".jar"))
+                        .findFirst();
+            } catch (IOException ex) {
+                log.warn("Path for " + pluginName + " not found in " + rootPath.toFile().getAbsolutePath(), ex);
+                return null;
+            }
+        } else {
+            log.warn("Path for " + pluginPath.toFile().getAbsolutePath() + " not exist");
+            jarPath = Optional.empty();
+        }
+
+        return jarPath
+                .map(Path::toFile)
+                .map(File::getAbsolutePath)
+                .map(this::addPlugin)
+                .flatMap(this.container::find)
+                .map((Container c) -> c.get(ContainerComponentRegistry.class))
+                .orElse(null);
     }
 
     public String addWithLocationPlugin(final String location, final String pluginRootFile) {
@@ -1139,6 +1178,8 @@ public class ComponentManager implements AutoCloseable {
 
         private final String dependenciesResource;
 
+        private final Function<String, ContainerComponentRegistry> pluginLoader;
+
         private final ModelVisitor visitor = new ModelVisitor();
 
         private final Collection<String> supportedAnnotations = Stream
@@ -1255,9 +1296,8 @@ public class ComponentManager implements AutoCloseable {
 
             final AtomicReference<Map<Class<?>, Object>> seviceLookupRef = new AtomicReference<>();
 
-            final ComponentInstantiator.Builder builder =
-                    new ComponentInstantiator.BuilderDefault(() -> container.get(ContainerComponentRegistry.class));
-
+            final ComponentInstantiator.Builder builder = new ComponentInstantiator.BuilderDefault(this.pluginLoader);
+            container.get(ContainerComponentRegistry.class);
             final Map<Class<?>, Object> services = new LazyMap<>(24,
                     type -> defaultServiceProvider
                             .lookup(container.getId(), container.getLoader(),

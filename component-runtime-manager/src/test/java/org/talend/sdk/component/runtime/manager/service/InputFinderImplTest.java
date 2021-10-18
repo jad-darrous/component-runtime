@@ -17,7 +17,7 @@ package org.talend.sdk.component.runtime.manager.service;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.talend.sdk.component.api.component.InputFinder;
+import org.talend.sdk.component.api.service.source.InputFinder;
 import org.talend.sdk.component.api.record.Record;
 import org.talend.sdk.component.api.service.record.RecordBuilderFactory;
 import org.talend.sdk.component.runtime.base.Lifecycle;
@@ -40,7 +40,7 @@ class InputFinderImplTest {
     @Test
     void find() {
         final ComponentInstantiator.Builder builder =
-                (final String pluginId, final ComponentInstantiator.MetaFinder finder,
+                (final String pluginId, final String familyName, final ComponentInstantiator.MetaFinder finder,
                         final ComponentManager.ComponentType componentType) -> this::instantiate;
 
         InputFinderImplTest.state = 0;

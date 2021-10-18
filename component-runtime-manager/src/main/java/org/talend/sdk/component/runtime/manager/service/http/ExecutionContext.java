@@ -65,7 +65,7 @@ public class ExecutionContext implements BiFunction<String, Object[], Object> {
             urlConnection = HttpURLConnection.class.cast(url.openConnection());
             urlConnection.setRequestMethod(request.getMethodType());
             request.getHeaders().forEach(urlConnection::setRequestProperty);
-
+            urlConnection.disconnect();
             final Optional<byte[]> requestBody = request.getBody();
 
             final DefaultConnection connection = new DefaultConnection(urlConnection, requestBody.orElse(null), true);

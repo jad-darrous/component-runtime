@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.talend.sdk.component.api.component;
+package org.talend.sdk.component.api.service.source;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -31,12 +31,14 @@ public interface InputFinder extends Serializable {
     /**
      * Retrieve iterator.
      * 
-     * @param familyName :
-     * @param datasetName : name of the input (producer or partition mapper).
+     * @param pluginName : plugin id.
+     * @param familyName : connector family name.
      * @param version : version of configuration.
      * @param configuration : dataset configuration.
      * @return
      */
-    Iterator<Record> find(final String familyName, final String datasetName, final int version,
+    Iterator<Record> find(final String pluginName, //
+            final String familyName, //
+            final int version, //
             final Map<String, String> configuration);
 }
