@@ -60,6 +60,8 @@ public interface Schema {
      */
     Stream<Entry> getAllEntries();
 
+    Schema.Builder toBuilder();
+
     default Entry getEntry(final String name) {
         return Optional
                 .ofNullable(getEntries()) //
@@ -213,6 +215,8 @@ public interface Schema {
                 return Json.createValue(prop);
             }
         }
+
+        Entry.Builder toBuilder();
 
         // Map<String, Object> metadata <-- DON'T DO THAT, ENSURE ANY META IS TYPED!
 

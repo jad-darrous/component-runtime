@@ -148,6 +148,11 @@ class SchemaTest {
         public String getProp(final String property) {
             return props.get(property);
         }
+
+        @Override
+        public Builder toBuilder() {
+            return null;
+        }
     }
 
     @RequiredArgsConstructor
@@ -210,6 +215,11 @@ class SchemaTest {
         @Override
         public String getProp(final String property) {
             return this.props.get(property);
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return null;
         }
     }
 

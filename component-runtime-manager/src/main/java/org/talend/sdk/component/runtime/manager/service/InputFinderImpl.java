@@ -22,7 +22,6 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 import org.talend.sdk.component.api.record.Record;
-import org.talend.sdk.component.api.service.source.InputFinder;
 import org.talend.sdk.component.runtime.input.Input;
 import org.talend.sdk.component.runtime.input.Mapper;
 import org.talend.sdk.component.runtime.manager.ComponentManager;
@@ -32,7 +31,7 @@ import org.talend.sdk.component.runtime.serialization.SerializableService;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class InputFinderImpl implements InputFinder {
+public class InputFinderImpl implements org.talend.sdk.component.api.service.source.InputFinder {
 
     private final String plugin;
 
@@ -44,7 +43,8 @@ public class InputFinderImpl implements InputFinder {
     public Iterator<Record> find(final String familyName, final String datasetName, final int version,
             final Map<String, String> configuration) {
 
-        final ComponentInstantiator.DatasetFinder datasetFinder = new ComponentInstantiator.DatasetFinder(datasetName);
+        final ComponentInstantiator.ComponentInputFinder datasetFinder =
+                new ComponentInstantiator.ComponentInputFinder(datasetName);
         final ComponentInstantiator instantiator =
                 this.mapperFinder.build(familyName, datasetFinder, ComponentManager.ComponentType.MAPPER);
         final Mapper mapper = this.findMapper(instantiator, version, configuration);
@@ -60,7 +60,7 @@ public class InputFinderImpl implements InputFinder {
     }
 
     private Object writeReplace() throws ObjectStreamException {
-        return new SerializableService(plugin, InputFinder.class.getName());
+        return new SerializableService(plugin, org.talend.sdk.component.api.service.source.InputFinder.class.getName());
     }
 
     static class InputIterator implements Iterator<Object> {

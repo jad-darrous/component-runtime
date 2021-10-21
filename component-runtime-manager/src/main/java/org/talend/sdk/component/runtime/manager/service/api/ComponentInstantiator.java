@@ -81,9 +81,9 @@ public interface ComponentInstantiator {
     }
 
     @RequiredArgsConstructor
-    class DatasetFinder implements MetaFinder {
+    class ComponentInputFinder implements MetaFinder {
 
-        private final String datasetName;
+        private final String inputName;
 
         @Override
         public Optional<? extends ComponentFamilyMeta.BaseMeta>
@@ -108,8 +108,7 @@ public interface ComponentInstantiator {
 
         private boolean isDataset(final ParameterMeta parameters) {
             final Map<String, String> metadata = parameters.getMetadata();
-            return "dataset".equals(metadata.get("tcomp::configuration::type"))
-                    && this.datasetName.equals(metadata.get("tcomp::configuration::name"));
+            return this.inputName.equals(metadata.get("tcomp::configuration::name"));
         }
     }
 }

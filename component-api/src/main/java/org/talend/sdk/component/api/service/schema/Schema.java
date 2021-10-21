@@ -82,6 +82,11 @@ public class Schema implements org.talend.sdk.component.api.record.Schema {
         return Optional.ofNullable(this.entries).map(List::stream).orElse(Stream.empty());
     }
 
+    @Override
+    public Builder toBuilder() {
+        return null;
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -146,6 +151,11 @@ public class Schema implements org.talend.sdk.component.api.record.Schema {
 
         @Override
         public String getProp(final String property) {
+            return null;
+        }
+
+        @Override
+        public Builder toBuilder() {
             return null;
         }
     }

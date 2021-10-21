@@ -97,6 +97,11 @@ class RecordBuilderFactoryTest {
         public String getProp(final String property) {
             return this.getProps().get(property);
         }
+
+        @Override
+        public Builder toBuilder() {
+            return null;
+        }
     }
 
     @RequiredArgsConstructor

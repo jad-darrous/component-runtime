@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.json.bind.annotation.JsonbTransient;
@@ -74,6 +75,19 @@ public class SchemaImpl implements Schema {
     @JsonbTransient
     public Stream<Entry> getAllEntries() {
         return Stream.concat(this.metadataEntries.stream(), this.entries.stream());
+    }
+
+    @Override
+    public Builder toBuilder() {
+        final Builder builder = new BuilderImpl()
+                .withType(this.type)
+                .withElementSchema(this.elementSchema)
+                .withProps(this.props
+                        .entrySet()
+                        .stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+        this.getAllEntries().forEach(builder::withEntry);
+        return builder;
     }
 
     public static class BuilderImpl implements Builder {
@@ -217,6 +231,22 @@ public class SchemaImpl implements Schema {
         @Override
         public String getProp(final String property) {
             return props.get(property);
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new BuilderImpl()
+                    .withName(this.name)
+                    .withNullable(this.nullable)
+                    .withType(this.type)
+                    .withComment(this.comment)
+                    .withElementSchema(this.elementSchema)
+                    .withDefaultValue(this.defaultValue)
+                    .withMetadata(this.metadata)
+                    .withProps(this.props
+                            .entrySet()
+                            .stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
         }
 
         public static class BuilderImpl implements Builder {

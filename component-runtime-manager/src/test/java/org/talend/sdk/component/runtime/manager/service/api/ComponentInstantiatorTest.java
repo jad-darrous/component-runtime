@@ -41,7 +41,7 @@ class ComponentInstantiatorTest {
         registry.getComponents().put("pluginId", familyMeta);
 
         ComponentInstantiator.BuilderDefault builder = new ComponentInstantiator.BuilderDefault(() -> registry);
-        ComponentInstantiator.MetaFinder finder = new ComponentInstantiator.DatasetFinder("TheDataSet");
+        ComponentInstantiator.MetaFinder finder = new ComponentInstantiator.ComponentInputFinder("TheDataSet");
 
         final ComponentInstantiator instanciator =
                 builder.build("pluginId", finder, ComponentManager.ComponentType.MAPPER);
@@ -62,7 +62,8 @@ class ComponentInstantiatorTest {
 
     @Test
     void testFinder() {
-        final ComponentInstantiator.DatasetFinder dataSet = new ComponentInstantiator.DatasetFinder("TheDataSet");
+        final ComponentInstantiator.ComponentInputFinder dataSet =
+                new ComponentInstantiator.ComponentInputFinder("TheDataSet");
         Assertions.assertFalse(dataSet.filter(Collections.emptyMap()).isPresent());
 
         final ComponentFamilyMeta familyMeta =

@@ -31,14 +31,14 @@ public interface InputFinder extends Serializable {
     /**
      * Retrieve iterator.
      * 
-     * @param pluginName : plugin id.
      * @param familyName : connector family name.
+     * @param datasetName : dataset name.
      * @param version : version of configuration.
      * @param configuration : dataset configuration.
      * @return
      */
-    Iterator<Record> find(final String pluginName, //
-            final String familyName, //
+    Iterator<Record> find(final String familyName, //
+            final String datasetName, //
             final int version, //
             final Map<String, String> configuration);
 }

@@ -185,6 +185,20 @@ public class AvroSchema implements org.talend.sdk.component.api.record.Schema, A
     }
 
     @Override
+    public Builder toBuilder() {
+        final Builder builder = new AvroSchemaBuilder()
+                .withElementSchema(this.elementSchema)
+                .withType(this.type)
+                .withProps(this
+                        .getProps()
+                        .entrySet()
+                        .stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+        this.getAllEntries().forEach(builder::withEntry);
+        return builder;
+    }
+
+    @Override
     public <T> T unwrap(final Class<T> type) {
         if (type.isInstance(delegate)) {
             return type.cast(delegate);
